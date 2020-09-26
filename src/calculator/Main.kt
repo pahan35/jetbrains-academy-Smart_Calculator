@@ -31,10 +31,6 @@ class InvalidExpressionException(message: String) : Exception(message)
 
 class UnknownVariableException(message: String) : Exception(message)
 
-val VAR_REGEX = Regex("[A-Za-z]+")
-
-fun isVariable(name: String) = name.matches(VAR_REGEX)
-
 class Expression(input: String, private val calculator: SmartCalculator) {
     private val postfix = mutableListOf<Element>()
 
@@ -51,9 +47,9 @@ class Expression(input: String, private val calculator: SmartCalculator) {
                 .split(Regex("\\s+"))
                 .forEach {
                     val isNumber = Regex("-?\\d+").matches(it)
-                    val isVariable_ = isVariable(it)
-                    if (isVariable_ || isNumber) {
-                        postfix.add(Element(isNumber = isNumber, isVariable = isVariable_, value = it))
+                    val isVariable = calculator.isVariable(it)
+                    if (isVariable || isNumber) {
+                        postfix.add(Element(isNumber = isNumber, isVariable = isVariable, value = it))
                     } else {
                         for (c in it) {
                             val currentOperator = Operations.findBySign(it)
@@ -137,6 +133,8 @@ class Expression(input: String, private val calculator: SmartCalculator) {
 class SmartCalculator() {
     private val variables = mutableMapOf<String, BigInteger>()
 
+    fun isVariable(name: String) = name.matches(Regex("[A-Za-z]+"))
+
     private fun existsVariable(variable: String) {
         if (!variables.contains(variable)) {
             throw UnknownVariableException("Unknown variable $variable")
@@ -193,11 +191,11 @@ Unary and binary minuses are supported, e.g. 2 -- 2 = 4""")
                         continue
                     }
                     val (variable, value) = parts
-                    if (!isVariable(variable)) {
+                    if (!calculator.isVariable(variable)) {
                         println("Invalid identifier")
                         continue
                     }
-                    if (isVariable(value)) {
+                    if (calculator.isVariable(value)) {
                         calculator.setVariable(variable, value)
                         continue
                     }
@@ -207,7 +205,7 @@ Unary and binary minuses are supported, e.g. 2 -- 2 = 4""")
                 }
                 continue
             }
-            if (isVariable(input)) {
+            if (calculator.isVariable(input)) {
                 println(calculator.getVariable(input))
                 continue
             }
